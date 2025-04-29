@@ -1,0 +1,155 @@
+{% extends 'header.html' %}
+
+{% block title %}My Complaints - Citizen Grievance Portal{% endblock %}
+
+{% load citizen_extras %}
+
+{% block content %}
+<div class="mb-4">
+    <div class="mb-3">
+        <h1 class="mb-2">My Complaints</h1>
+        <p class="mb-3">Manage your submitted grievances</p>
+        <a href="{% url 'lodge_grevance' %}" class="btn btn-primary">Lodge New Grievance</a>
+    </div>
+
+    <div class="mb-3">
+        <div class="posts-container">
+            {% for post in posts %}
+            <div class="card complaint-card">
+                <div class="card-header">
+                    <h3 class="card-title">{{ post.dept }}</h3>
+                    <div class="card-actions">
+                        <a href="{% url 'edit_complaint' post.id %}" class="btn btn-sm btn-outline">
+                            <span class="icon icon-edit icon-sm"></span> Edit
+                        </a>
+                        <a href="{% url 'delete_complaint' post.id %}" class="btn btn-sm btn-danger">
+                            <span class="icon icon-trash icon-sm"></span> Delete
+                        </a>
+                    </div>
+                </div>
+                <h4 class="card-subtitle">Ward No: {{ post.ward_no }}</h4>
+                <p class="card-text">{{ post.description|truncatewords:20 }}</p>
+
+                <div class="card-meta">
+                    <span>Posted: {{ post.created|date:"M d, Y" }}</span>
+                    {% if post.status %}
+                    <span class="badge badge-{{ post.status.name|lower }}">{{ post.status }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="vote-section">
+                    <div class="vote-count">
+                        <span class="vote-number {% if post.vote_count > 0 %}positive{% elif post.vote_count < 0 %}negative{% endif %}">
+                            {{ post.vote_count|default:"0" }}
+                        </span>
+                        <span class="vote-label">votes</span>
+                    </div>
+                    <div class="vote-details">
+                        <div class="vote-detail">
+                            <span class="icon icon-arrow-up icon-sm"></span>
+                            <span class="vote-detail-count">{{ post.get_upvote_count }}</span>
+                        </div>
+                        <div class="vote-detail">
+                            <span class="icon icon-arrow-down icon-sm"></span>
+                            <span class="vote-detail-count">{{ post.get_downvote_count }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-2">
+                    <a href="{% url 'view_grevance' post.id %}" class="btn">View Details</a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center p-4">
+                <h3>You haven't submitted any grievances yet</h3>
+                <p class="mb-3">Click the button above to lodge a new grievance</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_css %}
+<style>
+    .complaint-card {
+        position: relative;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .complaint-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .card-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .vote-section {
+        display: flex;
+        align-items: center;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--bg-dark);
+    }
+
+    .vote-count {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-right: 1rem;
+    }
+
+    .vote-number {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+
+    .vote-number.positive {
+        color: var(--success-color);
+    }
+
+    .vote-number.negative {
+        color: var(--danger-color);
+    }
+
+    .vote-label {
+        font-size: 0.75rem;
+        color: var(--text-light);
+    }
+
+    .vote-details {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .vote-detail {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .vote-detail-count {
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .icon-arrow-up {
+        color: var(--success-color);
+    }
+
+    .icon-arrow-down {
+        color: var(--danger-color);
+    }
+</style>
+{% endblock %}

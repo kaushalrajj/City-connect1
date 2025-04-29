@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Citizen Grievance Portal - Report and track civic issues in your area">
+    <title>{% block title %}Citizen Grievance Portal{% endblock %}</title>
+    {% load static %}
+    <link rel="icon" href="{% static 'images/favicon.svg' %}" type="image/svg+xml">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css/forms.css' %}">
+    <link rel="stylesheet" href="{% static 'css/responsive.css' %}">
+    <link rel="stylesheet" href="{% static 'css/icons.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <header class="header">
+        <div class="container header-content">
+            <div class="logo">
+                <a href="{% url 'home' %}">Citizen Grievance Portal</a>
+            </div>
+            <nav>
+                <div class="nav-links">
+                    <a href="{% url 'home' %}"><span class="icon icon-home icon-sm"></span> Home</a>
+                    <a href="{% url 'lodge_grevance' %}"><span class="icon icon-edit icon-sm"></span> Lodge Grievance</a>
+                    {% if request.user.is_authenticated %}
+                    <a href="{% url 'my_complaints' %}"><span class="icon icon-list icon-sm"></span> My Complaints</a>
+                    <a href="{% url 'logout' %}"><span class="icon icon-logout icon-sm"></span> Logout</a>
+                    {% else %}
+                    <a href="{% url 'login' %}"><span class="icon icon-login icon-sm"></span> Login</a>
+                    <a href="{% url 'register' %}"><span class="icon icon-person icon-sm"></span> Register</a>
+                    {% endif %}
+                </div>
+                <button id="mobile-nav-toggle" class="mobile-nav-toggle" aria-label="Toggle navigation">
+                    <span class="icon icon-menu"></span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible">
+                        {% if message.tags == 'success' %}
+                        <span class="icon icon-success-circle icon-sm"></span>
+                        {% elif message.tags == 'error' or message.tags == 'danger' %}
+                        <span class="icon icon-error-circle icon-sm"></span>
+                        {% elif message.tags == 'warning' %}
+                        <span class="icon icon-warning-circle icon-sm"></span>
+                        {% else %}
+                        <span class="icon icon-info-circle icon-sm"></span>
+                        {% endif %}
+                        {{ message }}
+                        <button type="button" class="close" aria-label="Close">
+                            <span class="icon icon-close icon-sm"></span>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="footer-text">
+                &copy; {% now "Y" %} Citizen Grievance Portal. All rights reserved.
+            </div>
+            <div class="footer-links">
+                <a href="#">About Us</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

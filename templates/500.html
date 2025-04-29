@@ -1,0 +1,11 @@
+{% extends 'header.html' %}
+
+{% block title %}Server Error - Citizen Grievance Portal{% endblock %}
+
+{% block content %}
+<div class="text-center mt-4 mb-4">
+    <h1 class="mb-3">500 - Server Error</h1>
+    <p class="mb-4">Something went wrong on our end. Please try again later.</p>
+    <a href="{% url 'home' %}" class="btn btn-primary">Return to Home</a>
+</div>
+{% endblock %}

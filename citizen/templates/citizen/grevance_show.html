@@ -1,0 +1,383 @@
+{% extends 'header.html' %}
+
+{% block title %}Grievance Details - Citizen Grievance Portal{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <div class="mb-3">
+        <a href="{% url 'home' %}" class="btn btn-outline">&larr; Back to All Grievances</a>
+        <a href="{% url 'lodge_grevance' %}" class="btn btn-primary">Lodge New Grievance</a>
+    </div>
+
+    <div class="grievance-detail">
+        <div class="mb-3 detail-header">
+            <div>
+                <h2 class="mb-1">Grievance Details</h2>
+                <div class="mb-3">
+                    {% if post.status %}
+                    <span class="badge badge-{{ post.status.name|lower }}">{{ post.status }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="vote-container">
+                <div class="vote-buttons">
+                    {% if request.user.is_authenticated %}
+                    <button class="vote-btn upvote-btn {% if user_vote.value == 1 %}active{% endif %}"
+                            data-post-id="{{ post.id }}"
+                            data-vote-type="upvote">
+                        <span class="icon icon-arrow-up"></span>
+                        <span class="vote-count" id="upvote-count">{{ upvote_count }}</span>
+                    </button>
+                    <button class="vote-btn downvote-btn {% if user_vote.value == -1 %}active{% endif %}"
+                            data-post-id="{{ post.id }}"
+                            data-vote-type="downvote">
+                        <span class="icon icon-arrow-down"></span>
+                        <span class="vote-count" id="downvote-count">{{ downvote_count }}</span>
+                    </button>
+                    {% else %}
+                    <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-sm btn-outline">
+                        <span class="icon icon-login icon-sm"></span> Login to vote
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="vote-total">
+                    <span id="vote-total">{{ post.get_vote_count }}</span> votes
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <h3 class="mb-1">Department</h3>
+            <p class="mb-3">{{ post.dept }}</p>
+
+            <h3 class="mb-1">Ward Number</h3>
+            <p class="mb-3">{{ post.ward_no }}</p>
+
+            <h3 class="mb-1">Description</h3>
+            <p class="mb-3">{{ post.description }}</p>
+        </div>
+
+        {% if post.image %}
+        <div class="mb-3">
+            <h3 class="mb-1">Attached Image</h3>
+            <img src="/media/{{post.image}}" alt="Grievance Image" class="grievance-image">
+        </div>
+        {% endif %}
+
+        {% if request.user.is_staff %}
+        <form method="POST" action="{% url 'change_status' post.id %}" class="status-form">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">Mark as Resolved</button>
+        </form>
+        {% endif %}
+
+        <div class="grievance-meta">
+            <span>Posted by: {{ post.host.username }}</span>
+            <span>Date: {{ post.created|date:"F d, Y" }}</span>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_css %}
+<style>
+    .detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .vote-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: var(--bg-light);
+        padding: 1rem;
+        border-radius: var(--border-radius-md);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease;
+    }
+
+    .vote-container:hover {
+        transform: translateY(-3px);
+    }
+
+    .vote-buttons {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .vote-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: none;
+        border: 1px solid var(--bg-dark);
+        border-radius: var(--border-radius-sm);
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .vote-btn:hover {
+        background-color: var(--bg-dark);
+    }
+
+    .upvote-btn.active {
+        background-color: var(--success-color);
+        color: white;
+        border-color: var(--success-color);
+    }
+
+    .downvote-btn.active {
+        background-color: var(--danger-color);
+        color: white;
+        border-color: var(--danger-color);
+    }
+
+    .vote-count {
+        font-weight: 600;
+        margin-top: 0.25rem;
+        transition: all 0.3s ease;
+    }
+
+    .vote-total {
+        font-size: 0.875rem;
+        color: var(--text-light);
+        transition: all 0.3s ease;
+    }
+
+    /* Vote button animations */
+    .vote-btn {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .vote-btn::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+
+    .vote-btn:hover::after {
+        transform: translateX(0);
+    }
+
+    .vote-btn.adding {
+        animation: vote-pulse 0.5s ease;
+    }
+
+    .vote-btn.removing {
+        animation: vote-fade 0.5s ease;
+    }
+
+    .vote-btn.clicked {
+        transform: scale(0.95);
+    }
+
+    /* Count change animations */
+    .count-increase {
+        animation: count-up 0.5s ease;
+        color: var(--success-color);
+    }
+
+    .count-decrease {
+        animation: count-down 0.5s ease;
+        color: var(--danger-color);
+    }
+
+    /* Animation keyframes */
+    @keyframes vote-pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+
+    @keyframes vote-fade {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+
+    @keyframes count-up {
+        0% { transform: translateY(100%); opacity: 0; }
+        100% { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes count-down {
+        0% { transform: translateY(-100%); opacity: 0; }
+        100% { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+    }
+
+    .status-form {
+        margin: 1.5rem 0;
+    }
+
+    .grievance-image {
+        max-width: 100%;
+        border-radius: var(--border-radius-md);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+    }
+
+    .grievance-image:hover {
+        transform: scale(1.02);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Function to animate count changes
+    function animateCountChange(element, newValue) {
+        // Store the current value
+        const currentValue = parseInt(element.textContent) || 0;
+
+        // If values are the same, no need to animate
+        if (currentValue === newValue) return;
+
+        // Add animation class based on whether the value increased or decreased
+        if (newValue > currentValue) {
+            element.classList.add('count-increase');
+        } else {
+            element.classList.add('count-decrease');
+        }
+
+        // Update the value
+        element.textContent = newValue;
+
+        // Remove the animation class after animation completes
+        setTimeout(() => {
+            element.classList.remove('count-increase', 'count-decrease');
+        }, 500);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get all vote buttons
+        const voteButtons = document.querySelectorAll('.vote-btn');
+
+        // Add click event to each button
+        voteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const postId = this.getAttribute('data-post-id');
+                const voteType = this.getAttribute('data-vote-type');
+
+                // Add click animation
+                this.classList.add('clicked');
+                setTimeout(() => {
+                    this.classList.remove('clicked');
+                }, 300);
+
+                // Send AJAX request
+                fetch(`/vote/${postId}/${voteType}/`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        // Show error message
+                        if (data.error) {
+                            alert(data.error);
+                        }
+                        return;
+                    }
+
+                    // If successful
+                    // Update vote counts with animation
+                    const upvoteCountElement = document.getElementById('upvote-count');
+                    const downvoteCountElement = document.getElementById('downvote-count');
+                    const voteTotalElement = document.getElementById('vote-total');
+
+                    // Animate the count changes with a slight delay for visual effect
+                    setTimeout(() => {
+                        animateCountChange(upvoteCountElement, data.upvote_count);
+                    }, 100);
+
+                    setTimeout(() => {
+                        animateCountChange(downvoteCountElement, data.downvote_count);
+                    }, 200);
+
+                    setTimeout(() => {
+                        animateCountChange(voteTotalElement, data.total_votes);
+                    }, 300);
+
+                    // Add a pulse animation to the vote total
+                    voteTotalElement.parentElement.style.animation = 'none';
+                    setTimeout(() => {
+                        voteTotalElement.parentElement.style.animation = 'pulse 0.5s ease';
+                    }, 10);
+
+                    // Toggle active class with animation
+                    if (voteType === 'upvote') {
+                        const upvoteBtn = document.querySelector('.upvote-btn');
+                        const downvoteBtn = document.querySelector('.downvote-btn');
+
+                        if (upvoteBtn.classList.contains('active')) {
+                            // Remove upvote with animation
+                            upvoteBtn.classList.add('removing');
+                            setTimeout(() => {
+                                upvoteBtn.classList.remove('active', 'removing');
+                            }, 300);
+                        } else {
+                            // Add upvote with animation
+                            upvoteBtn.classList.add('active', 'adding');
+                            downvoteBtn.classList.remove('active');
+                            setTimeout(() => {
+                                upvoteBtn.classList.remove('adding');
+                            }, 300);
+                        }
+                    } else if (voteType === 'downvote') {
+                        const upvoteBtn = document.querySelector('.upvote-btn');
+                        const downvoteBtn = document.querySelector('.downvote-btn');
+
+                        if (downvoteBtn.classList.contains('active')) {
+                            // Remove downvote with animation
+                            downvoteBtn.classList.add('removing');
+                            setTimeout(() => {
+                                downvoteBtn.classList.remove('active', 'removing');
+                            }, 300);
+                        } else {
+                            // Add downvote with animation
+                            downvoteBtn.classList.add('active', 'adding');
+                            upvoteBtn.classList.remove('active');
+                            setTimeout(() => {
+                                downvoteBtn.classList.remove('adding');
+                            }, 300);
+                        }
+                    }
+
+                    // Animate the vote container
+                    const voteContainer = document.querySelector('.vote-container');
+                    voteContainer.style.transform = 'translateY(-5px)';
+                    voteContainer.style.boxShadow = '0 10px 20px rgba(0, 0, 0, 0.1)';
+                    setTimeout(() => {
+                        voteContainer.style.transform = '';
+                        voteContainer.style.boxShadow = '';
+                    }, 500);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,440 @@
+{% extends 'header.html' %}
+
+{% block title %}Home - Citizen Grievance Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Enhanced card styling */
+    .card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.3s ease;
+    }
+
+    .card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .vote-indicator {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: var(--bg-light);
+        padding: 0.5rem;
+        border-radius: var(--border-radius-sm);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .vote-count {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .vote-count.positive {
+        color: var(--success-color);
+    }
+
+    .vote-count.negative {
+        color: var(--danger-color);
+    }
+
+    .vote-label {
+        font-size: 0.75rem;
+        color: var(--text-light);
+    }
+
+    .btn-animated {
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .btn-animated::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.1);
+        transform: scaleX(0);
+        transform-origin: right;
+        transition: transform 0.3s ease;
+        z-index: -1;
+    }
+
+    .btn-animated:hover::after {
+        transform: scaleX(1);
+        transform-origin: left;
+    }
+
+    /* Vote buttons styling */
+    .vote-actions {
+        display: flex;
+        justify-content: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .vote-buttons {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .vote-btn {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+        background: none;
+        border: 1px solid var(--bg-dark);
+        border-radius: var(--border-radius-sm);
+        padding: 0.4rem 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .vote-btn:hover {
+        background-color: var(--bg-dark);
+    }
+
+    .upvote-btn.active {
+        background-color: var(--success-color);
+        color: white;
+        border-color: var(--success-color);
+    }
+
+    .downvote-btn.active {
+        background-color: var(--danger-color);
+        color: white;
+        border-color: var(--danger-color);
+    }
+
+    .vote-count-small {
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    /* Vote button animations */
+    .vote-btn {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .vote-btn::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+
+    .vote-btn:hover::after {
+        transform: translateX(0);
+    }
+
+    .vote-btn.adding {
+        animation: vote-pulse 0.5s ease;
+    }
+
+    .vote-btn.removing {
+        animation: vote-fade 0.5s ease;
+    }
+
+    .vote-btn.clicked {
+        transform: scale(0.95);
+    }
+
+    /* Count change animations */
+    .count-increase {
+        animation: count-up 0.5s ease;
+        color: var(--success-color);
+    }
+
+    .count-decrease {
+        animation: count-down 0.5s ease;
+        color: var(--danger-color);
+    }
+
+    /* Animation keyframes */
+    @keyframes vote-pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+
+    @keyframes vote-fade {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+
+    @keyframes count-up {
+        0% { transform: translateY(100%); opacity: 0; }
+        100% { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes count-down {
+        0% { transform: translateY(-100%); opacity: 0; }
+        100% { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+    }
+</style>
+{% endblock %}
+
+{% load citizen_extras %}
+
+{% block content %}
+<div class="mb-4">
+    <div class="text-center mb-4">
+        <h1 class="mb-2">Citizen Grievance Portal</h1>
+        <p class="mb-3">A platform to report and track civic issues in your area</p>
+        <a href="{% url 'lodge_grevance' %}" class="btn btn-primary">Lodge New Grievance</a>
+    </div>
+
+    <div class="mb-3">
+        <h2 class="mb-3">Recent Grievances</h2>
+        <div class="posts-container">
+            {% for post in posts %}
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">{{ post.dept }}</h3>
+                    <div class="vote-indicator">
+                        <span class="vote-count {% if post.vote_count > 0 %}positive{% elif post.vote_count < 0 %}negative{% endif %}" id="vote-total-{{ post.id }}">
+                            {{ post.vote_count|default:"0" }}
+                        </span>
+                        <span class="vote-label">votes</span>
+                    </div>
+                </div>
+                <h4 class="card-subtitle">Ward No: {{ post.ward_no }}</h4>
+                <p class="card-text">{{ post.description|truncatewords:20 }}</p>
+                <div class="card-meta">
+                    <span>Posted: {{ post.created|date:"M d, Y" }}</span>
+                    {% if post.status %}
+                    <span class="badge badge-{{ post.status.name|lower }}">{{ post.status }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="vote-actions mt-3">
+                    <div class="vote-buttons">
+                        {% if request.user.is_authenticated %}
+                        <button class="vote-btn upvote-btn {% if user_votes|get_item:post.id == 1 %}active{% endif %}"
+                                data-post-id="{{ post.id }}"
+                                data-vote-type="upvote">
+                            <span class="icon icon-arrow-up"></span>
+                            <span class="vote-count-small">{{ post.get_upvote_count }}</span>
+                        </button>
+                        <button class="vote-btn downvote-btn {% if user_votes|get_item:post.id == -1 %}active{% endif %}"
+                                data-post-id="{{ post.id }}"
+                                data-vote-type="downvote">
+                            <span class="icon icon-arrow-down"></span>
+                            <span class="vote-count-small">{{ post.get_downvote_count }}</span>
+                        </button>
+                        {% else %}
+                        <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-sm btn-outline">
+                            <span class="icon icon-login icon-sm"></span> Login to vote
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="mt-2">
+                    <a href="{% url 'view_grevance' post.id %}" class="btn btn-animated">View Details</a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center p-4">
+                <h3>No grievances have been reported yet</h3>
+                <p class="mb-3">Be the first to report an issue in your area</p>
+                <a href="{% url 'lodge_grevance' %}" class="btn btn-primary">Lodge New Grievance</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+    // Function to animate count changes
+    function animateCountChange(element, newValue) {
+        // Store the current value
+        const currentValue = parseInt(element.textContent) || 0;
+
+        // If values are the same, no need to animate
+        if (currentValue === newValue) return;
+
+        // Add animation class based on whether the value increased or decreased
+        if (newValue > currentValue) {
+            element.classList.add('count-increase');
+        } else {
+            element.classList.add('count-decrease');
+        }
+
+        // Update the value
+        element.textContent = newValue;
+
+        // Remove the animation class after animation completes
+        setTimeout(() => {
+            element.classList.remove('count-increase', 'count-decrease');
+        }, 500);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get all vote buttons
+        const voteButtons = document.querySelectorAll('.vote-btn');
+
+        // Add click event to each button
+        voteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Add click animation
+                this.classList.add('clicked');
+                setTimeout(() => {
+                    this.classList.remove('clicked');
+                }, 300);
+
+                const postId = this.getAttribute('data-post-id');
+                const voteType = this.getAttribute('data-vote-type');
+
+                // Send AJAX request
+                fetch(`/vote/${postId}/${voteType}/`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        // Show error message
+                        if (data.error) {
+                            alert(data.error);
+                        }
+                        return;
+                    }
+
+                    // If successful
+                    // Get the card containing this button
+                    const card = this.closest('.card');
+
+                    // Update vote counts with animation
+                    const upvoteCountElement = card.querySelector('.upvote-btn .vote-count-small');
+                    const downvoteCountElement = card.querySelector('.downvote-btn .vote-count-small');
+                    const voteIndicator = card.querySelector('.vote-indicator .vote-count');
+
+                    // Animate the count changes with a slight delay for visual effect
+                    setTimeout(() => {
+                        animateCountChange(upvoteCountElement, data.upvote_count);
+                    }, 100);
+
+                    setTimeout(() => {
+                        animateCountChange(downvoteCountElement, data.downvote_count);
+                    }, 200);
+
+                    setTimeout(() => {
+                        animateCountChange(voteIndicator, data.total_votes);
+                    }, 300);
+
+                    // Update vote indicator class with animation
+                    voteIndicator.classList.remove('positive', 'negative');
+                    if (data.total_votes > 0) {
+                        voteIndicator.classList.add('positive');
+                    } else if (data.total_votes < 0) {
+                        voteIndicator.classList.add('negative');
+                    }
+
+                    // Add a pulse animation to the vote indicator
+                    voteIndicator.style.animation = 'none';
+                    setTimeout(() => {
+                        voteIndicator.style.animation = 'pulse 0.5s ease';
+                    }, 10);
+
+                    // Toggle active class with animation
+                    if (voteType === 'upvote') {
+                        const upvoteBtn = this;
+                        const downvoteBtn = card.querySelector('.downvote-btn');
+
+                        if (upvoteBtn.classList.contains('active')) {
+                            // Remove upvote with animation
+                            upvoteBtn.classList.add('removing');
+                            setTimeout(() => {
+                                upvoteBtn.classList.remove('active', 'removing');
+                            }, 300);
+                        } else {
+                            // Add upvote with animation
+                            upvoteBtn.classList.add('active', 'adding');
+                            downvoteBtn.classList.remove('active');
+                            setTimeout(() => {
+                                upvoteBtn.classList.remove('adding');
+                            }, 300);
+                        }
+                    } else if (voteType === 'downvote') {
+                        const upvoteBtn = card.querySelector('.upvote-btn');
+                        const downvoteBtn = this;
+
+                        if (downvoteBtn.classList.contains('active')) {
+                            // Remove downvote with animation
+                            downvoteBtn.classList.add('removing');
+                            setTimeout(() => {
+                                downvoteBtn.classList.remove('active', 'removing');
+                            }, 300);
+                        } else {
+                            // Add downvote with animation
+                            downvoteBtn.classList.add('active', 'adding');
+                            upvoteBtn.classList.remove('active');
+                            setTimeout(() => {
+                                downvoteBtn.classList.remove('adding');
+                            }, 300);
+                        }
+                    }
+
+                    // Add a subtle animation to the card
+                    card.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease';
+                    card.style.transform = 'translateY(-5px)';
+                    card.style.boxShadow = '0 10px 20px rgba(0, 0, 0, 0.1)';
+                    setTimeout(() => {
+                        card.style.transform = '';
+                        card.style.boxShadow = '';
+                    }, 500);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

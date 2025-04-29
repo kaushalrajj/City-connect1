@@ -1,0 +1,97 @@
+
+{% extends 'header.html' %}
+
+{% block title %}Lodge Grievance - Citizen Grievance Portal{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <div class="mb-3">
+        <a href="{% url 'home' %}" class="btn btn-outline">&larr; Back to Home</a>
+    </div>
+
+    <div class="auth-container">
+        <h2 class="auth-title">Lodge a New Grievance</h2>
+
+        <form method="POST" action="" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            {% if messages %}
+            <div class="mb-3">
+                {% for message in messages %}
+                <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger mb-3">
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {# Hide the host field, it will be set automatically in the view #}
+            <div style="display: none;">
+                {{ form.host }}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Department</label>
+                {{ form.dept }}
+                {% if form.dept.errors %}
+                <div class="error-message">
+                    {% for error in form.dept.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Ward Number</label>
+                {{ form.ward_no }}
+                {% if form.ward_no.errors %}
+                <div class="error-message">
+                    {% for error in form.ward_no.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                <div class="error-message">
+                    {% for error in form.description.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="help-text">Describe your grievance in detail</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Upload Image (Optional)</label>
+                {{ form.image }}
+                {% if form.image.errors %}
+                <div class="error-message">
+                    {% for error in form.image.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="help-text">Upload an image related to your grievance (max size: 5MB)</div>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-success">Submit Grievance</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
